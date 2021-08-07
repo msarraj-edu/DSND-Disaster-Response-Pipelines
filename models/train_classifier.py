@@ -1,24 +1,91 @@
+import nltk
+import pandas as pd
+import pickle
+import re
 import sys
+from nltk.corpus import stopwords
+from nltk.stem import WordNetLemmatizer
+from nltk.tokenize import word_tokenize
+from sklearn.ensemble import AdaBoostClassifier
+from sklearn.feature_extraction.text import CountVectorizer, TfidfTransformer
+from sklearn.metrics import accuracy_score, classification_report, f1_score
+from sklearn.model_selection import train_test_split
+from sklearn.multioutput import MultiOutputClassifier
+from sklearn.pipeline import Pipeline, FeatureUnion
+from sqlalchemy import create_engine
 
+nltk.download('stopwords')
 
 def load_data(database_filepath):
-    pass
+    
+    engine = create_engine('sqlite:///' + database_filepath)
+    df = pd.read_sql_table('clean_disaster_data', engine)
+    engine.dispose()
+    
+    X = df.message
+    Y = df.iloc[:,4:]
+    category_names = list(df.columns[4:])
+    
+    return X, Y, category_names
 
 
 def tokenize(text):
-    pass
+    '''
+    Tokenize message text. First, detects urls, then replaces those with the string "urlplaceholder". Second, tokenizes then lemmatizes non-stop words. Finally, returns 
+    list of resulting lemmatized tokens
+    
+    Arguments:
+    - The message text
+    
+    Returns:
+    - List of resulting lemmatized tokens
+    '''
+    # regex borrowed from this link:
+    # https://www.geeksforgeeks.org/python-check-url-string/
+    url_pat = r"(?i)\b((?:https?://|www\d{0,3}[.]|[a-z0-9.\-]+[.][a-z]{2,4}/)(?:[^\s()<>]+|\(([^\s()<>]+|(\([^\s()<>]+\)))*\))+(?:\(([^\s()<>]+|(\([^\s()<>]+\)))*\)|[^\s`!()\[\]{};:'\".,<>?«»“”‘’]))"
+    urls = re.findall(url_pat, text)
+    urls = [url[0] for url in urls]
+    for url in urls:
+        text = text.replace(url, 'urlplaceholder')
+    
+    stop_words = stopwords.words("english")
+    tokens = word_tokenize(text)
+    lemmatizer = WordNetLemmatizer()
+    
+    lemmatized_tokens = [lemmatizer.lemmatize(token).lower().strip() for token in tokens if token not in stop_words]
+    
+    return lemmatized_tokens
 
 
 def build_model():
-    pass
+    '''
+    Builds ML model pipeline
+    
+    Returns:
+    ML Model Pipeline
+    '''
+    pipeline = Pipeline([('vect', CountVectorizer(tokenizer=tokenize)),
+                         ('tfidf', TfidfTransformer()),
+                         ('clf', MultiOutputClassifier(AdaBoostClassifier()))
+                        ])
+
+    return pipeline
 
 
 def evaluate_model(model, X_test, Y_test, category_names):
-    pass
+    
+    Y_pred = model.predict(X_test)
+    
+    f_score = f1_score(Y_test, Y_pred, average='weighted')
+    print('f1-score is: ', f_score)
+    
+    for i, category in enumerate(category_names):
+        print('Category: ', category)
+        print(classification_report(Y_test.loc[:, category].values, Y_pred[:, i]))
 
 
 def save_model(model, model_filepath):
-    pass
+    pickle.dump(model, open(model_filepath, 'wb'))
 
 
 def main():
