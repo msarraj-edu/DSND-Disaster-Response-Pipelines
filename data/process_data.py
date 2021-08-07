@@ -21,7 +21,34 @@ def load_data(messages_filepath, categories_filepath):
 
 
 def clean_data(df):
-    pass
+    '''
+    Cleans the data
+    
+    Arguments:
+    - The unclean dataset (output of the load_data function)
+    
+    Returns:
+    - The clean dataset
+    '''
+    # extract categories column for processing/cleaning
+    categories = df.categories.str.split(pat=';', expand=True)
+    
+    # rename categories columns (remove the dash and number)
+    first_row = df.iloc[0, :]
+    col_names = first_row.apply(lambda x:x[:-2])
+    categories.columns = col_names
+    
+    # now use the number that was after the dash (in previous step) as cell value
+    for column in catogeries:
+        categories[column] = categories[column].str[-1]
+        categories[column] = categories[column].astype(np.int)
+    
+    # replace categories column with clean one then drop duplicates
+    df.drop('categories', axis=1, inplace=True)
+    df = pd.concat([df, categories], axis = 1)
+    df.drop_duplicates(subset='id', inplace=True)
+    
+    return df
 
 
 def save_data(df, database_filename):
