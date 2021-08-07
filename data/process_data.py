@@ -35,12 +35,12 @@ def clean_data(df):
     categories = df.categories.str.split(pat=';', expand=True)
     
     # rename categories columns (remove the dash and number)
-    first_row = df.iloc[0, :]
+    first_row = categories.iloc[0, :]
     col_names = first_row.apply(lambda x:x[:-2])
     categories.columns = col_names
     
     # now use the number that was after the dash (in previous step) as cell value
-    for column in catogeries:
+    for column in categories:
         categories[column] = categories[column].str[-1]
         categories[column] = categories[column].astype(np.int)
     
