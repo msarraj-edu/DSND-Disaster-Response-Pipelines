@@ -45,6 +45,9 @@ def tokenize(text):
     # regex borrowed from this link:
     # https://www.geeksforgeeks.org/python-check-url-string/
     url_pat = r"(?i)\b((?:https?://|www\d{0,3}[.]|[a-z0-9.\-]+[.][a-z]{2,4}/)(?:[^\s()<>]+|\(([^\s()<>]+|(\([^\s()<>]+\)))*\))+(?:\(([^\s()<>]+|(\([^\s()<>]+\)))*\)|[^\s`!()\[\]{};:'\".,<>?«»“”‘’]))"
+    # This is a simpler (faster) version, as the one above takes forever to run
+    url_pat = 'http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\(\),]|(?:%[0-9a-zA-Z][0-9a-zA-Z]))+'
+    
     urls = re.findall(url_pat, text)
     urls = [url[0] for url in urls]
     for url in urls:
@@ -73,7 +76,7 @@ def build_model():
     
     parameters = {
     'clf__estimator__learning_rate': [0.1, 0.2],
-    'clf__estimator__n_estimators': [50, 100, 200]
+    'clf__estimator__n_estimators': [10, 20, 50]
     }
     
     pipeline = GridSearchCV(estimator=pipeline, param_grid=parameters, cv=3, scoring='f1_weighted', verbose=2)
