@@ -49,6 +49,9 @@ def clean_data(df):
     df = pd.concat([df, categories], axis = 1)
     df.drop_duplicates(subset='id', inplace=True)
     
+    # this is needed for ML multiclass-multioutput support
+    df.loc[df['related'] == 2,'related'] = 1
+    
     return df
 
 
