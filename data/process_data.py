@@ -1,8 +1,23 @@
+import numpy as np
+import pandas as pd
 import sys
 
-
 def load_data(messages_filepath, categories_filepath):
-    pass
+    '''
+    Loads the dataset which includes the messages and categories
+    
+    Arguments:
+    - The file path of the messages csv file
+    - The file path of the categories csv file
+    
+    Returns:
+    - The inner merged dataset using the "id" column for joining the 2 tables
+    '''
+    messages = pd.read_csv(messages_filepath)
+    categories = pd.read_csv(categories_filepath)
+    data = pd.merge(messages, categories, on='id', how='inner')
+    
+    return data
 
 
 def clean_data(df):
