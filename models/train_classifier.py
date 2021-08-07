@@ -9,10 +9,12 @@ from nltk.tokenize import word_tokenize
 from sklearn.ensemble import AdaBoostClassifier
 from sklearn.feature_extraction.text import CountVectorizer, TfidfTransformer
 from sklearn.metrics import accuracy_score, classification_report, f1_score
-from sklearn.model_selection import train_test_split
+from sklearn.model_selection import GridSearchCV, train_test_split
 from sklearn.multioutput import MultiOutputClassifier
 from sklearn.pipeline import Pipeline, FeatureUnion
+from sklearn.tree import DecisionTreeClassifier
 from sqlalchemy import create_engine
+from workspace_utils import active_session
 
 nltk.download('stopwords')
 
@@ -66,8 +68,15 @@ def build_model():
     '''
     pipeline = Pipeline([('vect', CountVectorizer(tokenizer=tokenize)),
                          ('tfidf', TfidfTransformer()),
-                         ('clf', MultiOutputClassifier(AdaBoostClassifier()))
+                         ('clf', MultiOutputClassifier(AdaBoostClassifier(base_estimator=DecisionTreeClassifier(max_depth=1, class_weight='balanced'))))
                         ])
+    
+    parameters = {
+    'clf__estimator__learning_rate': [0.1, 0.2],
+    'clf__estimator__n_estimators': [50, 100, 200]
+    }
+    
+    pipeline = GridSearchCV(estimator=pipeline, param_grid=parameters, cv=3, scoring='f1_weighted', verbose=2)
 
     return pipeline
 
@@ -117,4 +126,5 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+    with active_session():
+        main()
